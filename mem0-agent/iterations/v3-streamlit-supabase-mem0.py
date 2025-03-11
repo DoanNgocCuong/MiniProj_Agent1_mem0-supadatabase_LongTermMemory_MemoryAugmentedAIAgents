@@ -39,15 +39,6 @@ def get_openai_client():
 
 @st.cache_resource
 def get_memory():
-    # Xóa collection cũ nếu nó tồn tại
-    try:
-        connection_string = os.environ['DATABASE_URL']
-        db = vecs.create_client(connection_string)
-        if "memories" in db.get_collection_names():
-            db.drop_collection("memories")
-    except Exception as e:
-        st.error(f"Error deleting old collection: {e}")
-        
     # Tạo config cho Memory
     config = {
         "llm": {
@@ -60,8 +51,8 @@ def get_memory():
             "provider": "supabase",
             "config": {
                 "connection_string": os.environ['DATABASE_URL'],
-                "collection_name": "memories",
-                "embedding_dimension": 1536  # Số chiều của OpenAI text-embedding-ada-002
+                "collection_name": "memories_new",
+                "embedding_model_dims": 1536  # Số chiều của OpenAI text-embedding-ada-002
             }
         }    
     }
