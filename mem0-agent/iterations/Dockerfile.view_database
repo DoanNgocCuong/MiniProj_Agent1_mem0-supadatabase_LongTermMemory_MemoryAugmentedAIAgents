@@ -16,15 +16,20 @@ RUN pip install --no-cache-dir \
     numpy==1.26.4 \
     mem0ai==0.1.65 \
     vecs \
-    psycopg2-binary
+    psycopg2-binary \
+    pandas
 
 # Copy application code, .env file, and avatar image
-COPY ./iterations/v3-streamlit-supabase-mem0.py .
+COPY ./iterations/v3_view_database.py .
 COPY ./iterations/.env .env
 COPY ./iterations/DoanNgocCuong.png .
+
+# Add a startup script with error handling
+RUN echo '#!/bin/bash\nset -e\necho "Starting Streamlit app with error logging..."\nstreamlit run v3_view_database.py --server.port=8501 --server.address=0.0.0.0 2>&1 | tee /app/streamlit_errors.log' > /app/start.sh \
+    && chmod +x /app/start.sh
 
 # Expose the port Streamlit runs on
 EXPOSE 8501
 
-# Command to run the application
-CMD ["streamlit", "run", "v3-streamlit-supabase-mem0.py", "--server.port=8501", "--server.address=0.0.0.0"]
+# Command to run the application with error handling
+CMD ["/app/start.sh"] 
