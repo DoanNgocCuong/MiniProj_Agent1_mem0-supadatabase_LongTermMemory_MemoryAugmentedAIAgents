@@ -35,4 +35,8 @@ cd mem0-agent/iterations
 sudo docker compose up -build --d
 ```
 
+Link video demo: 
+- Demo 1.1: https://youtu.be/v8OqQgL68No
+- Demo 1.2: https://youtu.be/xxUajWKJOmo
+
 --------------------------------
