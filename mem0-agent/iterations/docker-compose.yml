@@ -10,8 +10,11 @@ services:
       - "25048:8501"
     environment:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - DATABASE_URL=postgresql://postgres.eyiapboikevbitxvqnkw:nhbcd.0205@aws-0-ap-southeast-1.pooler.supabase.com:6543/postgres
-      - SUPABASE_URL=https://eyiapboikevbitxvqnkw.supabase.co
-      - SUPABASE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV5aWFwYm9pa2V2Yml0eHZxbmt3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE2NzAyOTUsImV4cCI6MjA1NzI0NjI5NX0.j9qnEhmN9EDyutn7Gj0uNNUi61AJd2xnq8KJfC6ny3w
-      - MODEL_CHOICE=gpt-4o-mini
+      - DATABASE_URL=${DATABASE_URL}
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_KEY=${SUPABASE_KEY}
+      - MODEL_CHOICE=${MODEL_CHOICE}
     restart: unless-stopped
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4

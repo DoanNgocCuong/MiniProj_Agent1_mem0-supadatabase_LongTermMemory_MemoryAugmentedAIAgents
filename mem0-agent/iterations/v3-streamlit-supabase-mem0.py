@@ -112,23 +112,43 @@ def sign_out():
 
 # Chat function with memory
 def chat_with_memories(message, user_id):
-    # Retrieve relevant memories
-    relevant_memories = memory.search(query=message, user_id=user_id, limit=3)
-    memories_str = "\n".join(f"- {entry['memory']}" for entry in relevant_memories["results"])
-    
-    # Generate Assistant response
-    system_prompt = f"You are a helpful AI assistant with memory. Answer the question based on the query and user's memories.\nUser Memories:\n{memories_str}"
-    messages = [{"role": "system", "content": system_prompt}, {"role": "user", "content": message}]
-    
-    with st.spinner("Thinking..."):
-        response = openai_client.chat.completions.create(model="gpt-4o-mini", messages=messages)
-        assistant_response = response.choices[0].message.content
+    try:
+        # Retrieve relevant memories
+        with st.spinner("Searching memories..."):
+            try:
+                relevant_memories = memory.search(query=message, user_id=user_id, limit=3)
+                memories_str = "\n".join(f"- {entry['memory']}" for entry in relevant_memories["results"])
+            except Exception as e:
+                st.error(f"Error retrieving memories: {str(e)}")
+                memories_str = "(No memories available)"
+        
+        # Generate Assistant response
+        system_prompt = f"You are a helpful AI assistant with memory. Answer the question based on the query and user's memories.\nUser Memories:\n{memories_str}"
+        messages = [{"role": "system", "content": system_prompt}, {"role": "user", "content": message}]
+        
+        with st.spinner("Thinking..."):
+            try:
+                response = openai_client.chat.completions.create(
+                    model="gpt-4o-mini", 
+                    messages=messages,
+                    timeout=60  # Increase timeout to 60 seconds
+                )
+                assistant_response = response.choices[0].message.content
+            except Exception as e:
+                st.error(f"Error generating response: {str(e)}")
+                return "I'm sorry, I couldn't generate a response at this time. Please try again later."
 
-    # Create new memories from the conversation
-    messages.append({"role": "assistant", "content": assistant_response})
-    memory.add(messages, user_id=user_id)
+        # Create new memories from the conversation
+        try:
+            messages.append({"role": "assistant", "content": assistant_response})
+            memory.add(messages, user_id=user_id)
+        except Exception as e:
+            st.warning(f"Could not save this conversation to memory: {str(e)}")
 
-    return assistant_response
+        return assistant_response
+    except Exception as e:
+        st.error(f"General error: {str(e)}")
+        return "Sorry, an error occurred. Please try again later."
 
 # Initialize session state
 if not st.session_state.get("messages", None):
