@@ -6,7 +6,7 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     ports:
-      - "8000:8000"
+      - "25048:8000"
     environment:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - DATABASE_URL=${DATABASE_URL}
@@ -17,17 +17,24 @@ services:
     restart: unless-stopped
     volumes:
       - ./backend:/app
+    # Comment hoặc tắt healthcheck
+    # healthcheck:
+    #   test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+    #   interval: 30s
+    #   timeout: 10s
+    #   retries: 3
+    #   start_period: 60s
 
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
     ports:
-      - "25048:80"
+      - "25049:80"
     depends_on:
-      - backend
+      - backend  # Quay lại định dạng cũ
     environment:
-      - REACT_APP_API_URL=http://localhost:8000
+      - REACT_APP_API_URL=http://backend:8000
       - REACT_APP_API_TOKEN=mem0-fullstack-token
       - REACT_APP_SUPABASE_URL=${SUPABASE_URL}
       - REACT_APP_SUPABASE_KEY=${SUPABASE_KEY}

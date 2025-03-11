@@ -1,6 +1,9 @@
 import axios from 'axios';
+import supabase from './auth';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+const API_URL = process.env.NODE_ENV === 'production' 
+  ? 'http://backend:8000'  // Trong Docker, dùng tên service
+  : 'http://localhost:25048'; // Khi phát triển local
 const API_TOKEN = process.env.REACT_APP_API_TOKEN || 'mem0-fullstack-token';
 
 // Khởi tạo Axios với config mặc định
@@ -8,8 +11,22 @@ const api = axios.create({
   baseURL: API_URL,
   headers: {
     'Content-Type': 'application/json',
-    'Authorization': `Bearer ${API_TOKEN}`
   }
+});
+
+// Thêm interceptor để tự động thêm token vào mỗi request
+api.interceptors.request.use(async (config) => {
+  // Ưu tiên dùng Supabase session token nếu có
+  const { data } = await supabase.auth.getSession();
+  
+  if (data.session?.access_token) {
+    config.headers['Authorization'] = `Bearer ${data.session.access_token}`;
+  } else {
+    // Fallback dùng API_TOKEN nếu không có session
+    config.headers['Authorization'] = `Bearer ${API_TOKEN}`;
+  }
+  
+  return config;
 });
 
 // Interface cho các requests và responses

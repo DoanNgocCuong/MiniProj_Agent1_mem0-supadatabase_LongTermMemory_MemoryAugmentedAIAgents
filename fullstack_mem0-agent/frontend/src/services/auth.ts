@@ -4,6 +4,11 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 const supabaseUrl = process.env.REACT_APP_SUPABASE_URL || '';
 const supabaseKey = process.env.REACT_APP_SUPABASE_KEY || '';
 
+// Validate that we have the required environment variables
+if (!supabaseUrl || !supabaseKey) {
+  console.error('Missing Supabase URL or key. Check your .env file');
+}
+
 // Create Supabase client
 const supabase: SupabaseClient = createClient(supabaseUrl, supabaseKey);
 

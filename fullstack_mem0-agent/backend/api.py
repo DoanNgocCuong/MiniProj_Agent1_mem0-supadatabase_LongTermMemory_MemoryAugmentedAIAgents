@@ -51,22 +51,11 @@ config = {
 
 try:
     memory = Memory.from_config(config)
-    print(f"Successfully created collection with config")
+    print("Successfully created Memory collection")
 except Exception as e:
-    print(f"Failed to create collection: {str(e)}")
-    try:
-        alt_config = {
-            "llm": {
-                "provider": "openai",
-                "config": {
-                    "model": os.getenv('MODEL_CHOICE', 'gpt-4o-mini')
-                }
-            }
-        }
-        memory = Memory.from_config(alt_config)
-        print("Using fallback in-memory storage")
-    except Exception as e2:
-        print(f"Failed to create fallback memory: {str(e2)}")
+    print(f"Error initializing Memory: {str(e)}")
+    # Cung cấp một memory giả để ứng dụng không crash
+    # hoặc bạn có thể xử lý tùy theo trường hợp
 
 # Model definitions
 class ChatRequest(BaseModel):
@@ -92,10 +81,24 @@ class UserMessages(BaseModel):
 
 def verify_token(credentials: HTTPAuthorizationCredentials = Security(security)) -> bool:
     """Verify bearer token"""
+    token = credentials.credentials
     expected_token = os.getenv("API_TOKEN", "mem0-fullstack-token")
-    if credentials.credentials != expected_token:
-        raise HTTPException(status_code=401, detail="Invalid token")
-    return True
+    
+    # Đầu tiên kiểm tra xem có phải API token không
+    if token == expected_token:
+        return True
+        
+    # Nếu không, thử xác thực với Supabase
+    try:
+        # Verify with Supabase JWT
+        user = supabase.auth.get_user(token)
+        if user and user.data and user.data.id:
+            return True
+    except Exception as e:
+        print(f"Token verification error: {str(e)}")
+    
+    # Nếu cả hai đều không thành công, từ chối truy cập
+    raise HTTPException(status_code=401, detail="Invalid token")
 
 # API Endpoints
 @app.get("/health")
