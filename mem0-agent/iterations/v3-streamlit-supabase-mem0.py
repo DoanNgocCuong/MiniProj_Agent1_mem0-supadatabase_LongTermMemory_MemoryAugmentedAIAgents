@@ -6,9 +6,15 @@ from mem0 import Memory
 import supabase
 from supabase.client import Client, ClientOptions
 import uuid
+import vecs
 
 # Load environment variables
 load_dotenv()
+
+# Initialize constants
+SUPABASE_URL = os.environ.get("SUPABASE_URL")
+SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
+MODEL_CHOICE = os.environ.get("MODEL_CHOICE", "gpt-4o-mini")
 
 # Initialize Supabase client
 supabase_url = os.environ.get("SUPABASE_URL", "https://gewcfncoqvxnkrbpfonk.supabase.co")
@@ -23,6 +29,9 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+# Initialize OpenAI client
+client = OpenAI()
+
 # Cache OpenAI client and Memory instance
 @st.cache_resource
 def get_openai_client():
@@ -30,18 +39,29 @@ def get_openai_client():
 
 @st.cache_resource
 def get_memory():
+    # Xóa collection cũ nếu nó tồn tại
+    try:
+        connection_string = os.environ['DATABASE_URL']
+        db = vecs.create_client(connection_string)
+        if "memories" in db.get_collection_names():
+            db.drop_collection("memories")
+    except Exception as e:
+        st.error(f"Error deleting old collection: {e}")
+        
+    # Tạo config cho Memory
     config = {
         "llm": {
             "provider": "openai",
             "config": {
-                "model": "gpt-4o-mini"
+                "model": MODEL_CHOICE
             }
         },
         "vector_store": {
             "provider": "supabase",
             "config": {
                 "connection_string": os.environ['DATABASE_URL'],
-                "collection_name": "memories"
+                "collection_name": "memories",
+                "embedding_dimension": 1536  # Số chiều của OpenAI text-embedding-ada-002
             }
         }    
     }
