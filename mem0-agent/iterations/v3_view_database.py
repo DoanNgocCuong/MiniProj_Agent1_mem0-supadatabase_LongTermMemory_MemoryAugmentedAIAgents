@@ -22,6 +22,21 @@ st.set_page_config(
     layout="wide"
 )
 
+# Sidebar with author information
+with st.sidebar:
+    st.title("Database Explorer")
+    
+    # Author information
+    st.markdown("---")
+    col1, col2 = st.columns([1, 3])
+    with col1:
+        st.image("DoanNgocCuong.png", width=60)
+    with col2:
+        st.markdown("### Doan Ngoc Cuong")
+        st.markdown("[GitHub Profile](https://github.com/DoanNgocCuong)")
+    st.markdown("---")
+
+# Main title
 st.title("Memory Database Explorer")
 
 # Initialize connection

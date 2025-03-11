@@ -7,6 +7,7 @@ import supabase
 from supabase.client import Client, ClientOptions
 import uuid
 import vecs
+import psycopg2
 
 # Load environment variables
 load_dotenv()
@@ -39,24 +40,75 @@ def get_openai_client():
 
 @st.cache_resource
 def get_memory():
-    # Tạo config cho Memory
-    config = {
-        "llm": {
-            "provider": "openai",
-            "config": {
-                "model": MODEL_CHOICE
-            }
-        },
-        "vector_store": {
-            "provider": "supabase",
-            "config": {
-                "connection_string": os.environ['DATABASE_URL'],
-                "collection_name": "memories_new",
-                "embedding_model_dims": 1536  # Số chiều của OpenAI text-embedding-ada-002
-            }
-        }    
-    }
-    return Memory.from_config(config)
+    try:
+        # Kết nối trực tiếp để tăng timeout
+        conn_str = os.environ['DATABASE_URL']
+        
+        # Tăng statement_timeout cho toàn bộ phiên
+        try:
+            direct_conn = psycopg2.connect(conn_str)
+            with direct_conn.cursor() as cur:
+                # Tăng statement_timeout lên 5 phút
+                cur.execute("SET statement_timeout = 300000")  # 5 phút
+                direct_conn.commit()
+            
+            # Sửa đổi chuỗi kết nối để thêm options
+            if "?" in conn_str:
+                conn_str += "&options=--statement_timeout=300000"
+            else:
+                conn_str += "?options=--statement_timeout=300000"
+                
+            direct_conn.close()
+        except Exception as e:
+            st.warning(f"Không thể cấu hình timeout: {str(e)}")
+        
+        # Tạo config cho Memory - loại bỏ create_collection
+        config = {
+            "llm": {
+                "provider": "openai",
+                "config": {
+                    "model": MODEL_CHOICE
+                }
+            },
+            "vector_store": {
+                "provider": "supabase",
+                "config": {
+                    "connection_string": conn_str,
+                    "collection_name": "memories_new",
+                    "embedding_model_dims": 1536  # Số chiều của OpenAI text-embedding-ada-002
+                }
+            }    
+        }
+        
+        # Thử tạo collection trước khi khởi tạo Memory
+        try:
+            import vecs
+            db = vecs.create_client(conn_str)
+            # Kiểm tra nếu collection đã tồn tại
+            try:
+                # Sử dụng get_or_create_collection thay vì create_collection
+                db.get_or_create_collection(
+                    name="memories_new",
+                    dimension=1536
+                )
+                st.success("Collection đã được tạo/truy cập thành công!")
+            except Exception as e:
+                st.warning(f"Không thể tạo collection: {str(e)}")
+        except Exception as e:
+            st.warning(f"Không thể kết nối với vecs: {str(e)}")
+        
+        return Memory.from_config(config)
+    except Exception as e:
+        st.error(f"Lỗi khởi tạo Memory: {str(e)}")
+        # Trả về đối tượng giả
+        class FallbackMemory:
+            def search(self, query, user_id, limit=3):
+                return {"results": []}
+            def add(self, messages, user_id):
+                pass
+            def clear(self, user_id):
+                pass
+        return FallbackMemory()
 
 # Get cached resources
 openai_client = get_openai_client()
@@ -168,6 +220,16 @@ if st.session_state.get("logout_requested", False):
 # Sidebar for authentication
 with st.sidebar:
     st.title("🧠 Mem0 Chat")
+    
+    # Thêm thông tin tác giả
+    st.markdown("---")
+    col1, col2 = st.columns([1, 3])
+    with col1:
+        st.image("DoanNgocCuong.png", width=60)
+    with col2:
+        st.markdown("### Doan Ngoc Cuong")
+        st.markdown("[GitHub Profile](https://github.com/DoanNgocCuong)")
+    st.markdown("---")
     
     if not st.session_state.authenticated:
         tab1, tab2 = st.tabs(["Login", "Sign Up"])
