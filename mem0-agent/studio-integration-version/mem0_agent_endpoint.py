@@ -53,12 +53,32 @@ config = {
         "provider": "supabase",
         "config": {
             "connection_string": os.environ['DATABASE_URL'],
-            "collection_name": "memories"
+            "collection_name": "memories_api_new",
+            "embedding_model_dims": 1536
         }
     }    
 }
 
-memory = Memory.from_config(config)
+try:
+    memory = Memory.from_config(config)
+    print(f"Successfully created collection with config: {config}")
+except Exception as e:
+    print(f"Failed to create collection: {str(e)}")
+    # Thử lại với cách khác nếu lỗi
+    try:
+        alt_config = {
+            "llm": {
+                "provider": "openai",
+                "config": {
+                    "model": os.getenv('LLM_MODEL', 'gpt-4o-mini')
+                }
+            }
+        }
+        memory = Memory.from_config(alt_config)
+        print("Using fallback in-memory storage")
+    except Exception as e2:
+        print(f"Failed to create fallback memory: {str(e2)}")
+        # Tiếp tục khởi động API mà không có memory
 
 # Request/Response Models
 class AgentRequest(BaseModel):
@@ -99,7 +119,8 @@ async def fetch_conversation_history(session_id: str, limit: int = 10) -> List[D
         messages = response.data[::-1]
         return messages
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to fetch conversation history: {str(e)}")
+        print(f"Error fetching conversation history: {str(e)}")
+        return []
 
 async def store_message(session_id: str, message_type: str, content: str, data: Optional[Dict] = None):
     """Store a message in the Supabase messages table."""
@@ -115,8 +136,9 @@ async def store_message(session_id: str, message_type: str, content: str, data: 
             "session_id": session_id,
             "message": message_obj
         }).execute()
+        print(f"Stored message: {message_type} - {content[:30]}...")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to store message: {str(e)}")
+        print(f"Failed to store message: {str(e)}")
 
 @app.post("/api/mem0-agent", response_model=AgentResponse)
 async def web_search(
@@ -144,8 +166,12 @@ async def web_search(
         )       
 
         # Retrieve relevant memories with Mem0
-        relevant_memories = memory.search(query=request.query, user_id=request.user_id, limit=3)
-        memories_str = "\n".join(f"- {entry['memory']}" for entry in relevant_memories["results"])     
+        try:
+            relevant_memories = memory.search(query=request.query, user_id=request.user_id, limit=3)
+            memories_str = "\n".join(f"- {entry['memory']}" for entry in relevant_memories["results"])
+        except Exception as e:
+            print(f"Error retrieving memories: {str(e)}")
+            memories_str = "(No memories available)"
 
         # Initialize agent dependencies
         async with httpx.AsyncClient() as client:
@@ -169,11 +195,14 @@ async def web_search(
         )
 
         # Update memories based on the last user message and agent response
-        memory_messages = [
-            {"role": "user", "content": request.query},
-            {"role": "assistant", "content": result.data}
-        ]
-        memory.add(memory_messages, user_id=request.user_id)        
+        try:
+            memory_messages = [
+                {"role": "user", "content": request.query},
+                {"role": "assistant", "content": result.data}
+            ]
+            memory.add(memory_messages, user_id=request.user_id)        
+        except Exception as e:
+            print(f"Error adding memory: {str(e)}")
 
         return AgentResponse(success=True)
 
@@ -187,6 +216,11 @@ async def web_search(
             data={"error": str(e), "request_id": request.request_id}
         )
         return AgentResponse(success=False)
+
+@app.get("/health")
+async def health_check():
+    """Simple health check endpoint."""
+    return {"status": "ok"}
 
 if __name__ == "__main__":
     import uvicorn

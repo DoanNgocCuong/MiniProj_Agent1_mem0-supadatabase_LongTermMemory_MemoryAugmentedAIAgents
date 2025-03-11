@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   streamlit-app:
-    image: mem0-streamlit:1.0
+    image: mem0-streamlit-doanngoccuong:1.0
     build:
       context: ..
       dockerfile: iterations/Dockerfile
