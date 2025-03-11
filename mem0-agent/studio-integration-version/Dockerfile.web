@@ -1,0 +1,19 @@
+FROM python:3.10-slim
+
+WORKDIR /app
+
+# Copy application code
+COPY ./studio-integration-version/mem0_agent_web.py .
+COPY ./studio-integration-version/requirements.txt .
+
+# Create directories for templates and static files
+RUN mkdir -p templates static
+
+# Install dependencies
+RUN pip install --no-cache-dir fastapi uvicorn jinja2 httpx python-multipart
+
+# Expose port
+EXPOSE 8080
+
+# Run the web app
+CMD ["python", "mem0_agent_web.py"] 

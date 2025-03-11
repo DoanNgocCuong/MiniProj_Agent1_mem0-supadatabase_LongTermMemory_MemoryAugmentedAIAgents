@@ -222,6 +222,22 @@ async def health_check():
     """Simple health check endpoint."""
     return {"status": "ok"}
 
+@app.get("/api/history")
+async def get_history(
+    session_id: str,
+    limit: int = 50,
+    authenticated: bool = Depends(verify_token)
+):
+    """Get conversation history for a session."""
+    try:
+        messages = await fetch_conversation_history(session_id, limit)
+        return messages
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to fetch conversation history: {str(e)}"
+        )
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8001)
