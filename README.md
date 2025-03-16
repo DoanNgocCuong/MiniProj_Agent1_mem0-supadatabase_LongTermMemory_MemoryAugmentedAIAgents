@@ -1,4 +1,4 @@
-# mem0-supadatabase
+# mem0-supadatabase - Đoàn Ngọc Cường 
 
 Link repo: https://github.com/coleam00/ottomator-agents/tree/main/mem0-agent
 
