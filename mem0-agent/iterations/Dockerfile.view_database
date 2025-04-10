@@ -22,7 +22,7 @@ RUN pip install --no-cache-dir \
 # Copy application code, .env file, and avatar image
 COPY ./iterations/v3_view_database.py .
 COPY ./iterations/.env .env
-COPY ./iterations/DoanNgocCuong.png .
+COPY ./iterations/baby.png .
 
 # Add a startup script with error handling
 RUN echo '#!/bin/bash\nset -e\necho "Starting Streamlit app with error logging..."\nstreamlit run v3_view_database.py --server.port=8501 --server.address=0.0.0.0 2>&1 | tee /app/streamlit_errors.log' > /app/start.sh \

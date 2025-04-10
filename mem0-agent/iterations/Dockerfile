@@ -21,7 +21,7 @@ RUN pip install --no-cache-dir \
 # Copy application code, .env file, and avatar image
 COPY ./iterations/v3-streamlit-supabase-mem0.py .
 COPY ./iterations/.env .env
-COPY ./iterations/DoanNgocCuong.png .
+COPY ./iterations/baby.png .
 
 # Expose the port Streamlit runs on
 EXPOSE 8501

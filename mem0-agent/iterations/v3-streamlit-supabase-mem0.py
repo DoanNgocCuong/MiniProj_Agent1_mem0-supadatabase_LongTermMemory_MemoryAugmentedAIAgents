@@ -225,7 +225,7 @@ with st.sidebar:
     st.markdown("---")
     col1, col2 = st.columns([1, 3])
     with col1:
-        st.image("DoanNgocCuong.png", width=60)
+        st.image("baby.png", width=60)
     with col2:
         st.markdown("### Doan Ngoc Cuong")
         st.markdown("[GitHub Profile](https://github.com/DoanNgocCuong)")
