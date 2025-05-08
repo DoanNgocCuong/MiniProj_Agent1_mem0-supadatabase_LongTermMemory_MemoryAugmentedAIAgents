@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [1.0.0] - 12-03-2025
+## [1.0.0] - 12-03-2025 - Doan Ngoc Cuong
 
 ### Added
 - Initial release of Mem0 Chat Assistant
